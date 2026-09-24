@@ -224,79 +224,6 @@ body {
 }
 .sem-footer .val { color: var(--accent); font-weight: 500; }
 
-/* ── DP toggle ── */
-.dp-toggle-wrap {
-  display: flex; align-items: center; gap: 0.5rem;
-  margin-top: 1rem;
-}
-.dp-toggle-label { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); }
-.dp-pill {
-  display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
-}
-.dp-pill button {
-  background: none; border: none; cursor: pointer;
-  color: var(--text-muted); font-family: var(--font); font-size: 0.75rem; font-weight: 500;
-  padding: 0.3rem 0.7rem; transition: background 0.15s, color 0.15s;
-}
-.dp-pill button.active { background: var(--accent); color: white; }
-
-/* ── Excluded semester ── */
-.semester-card.excluded .sem-body { opacity: 0.4; pointer-events: none; }
-.semester-card.excluded .semester-header { background: var(--surface); opacity: 1; }
-.semester-card.excluded .sem-include-pill { opacity: 1 !important; pointer-events: all !important; }
-.sem-excluded-label {
-  font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--danger); background: var(--danger-soft);
-  border: 1px solid rgba(242,87,87,0.3);
-  padding: 0.18rem 0.5rem; border-radius: 4px; white-space: nowrap; flex-shrink: 0;
-}
-
-/* ── Include pill toggle ── */
-.sem-include-pill {
-  display: inline-flex; align-items: center;
-  flex-shrink: 0; cursor: pointer;
-  width: 36px; height: 20px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  position: relative;
-  transition: background 0.2s, border-color 0.2s;
-}
-.sem-include-pill.on {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-}
-.sem-include-pill.off {
-  background: var(--danger-soft);
-  border-color: rgba(242,87,87,0.4);
-}
-.sem-include-thumb {
-  position: absolute;
-  top: 2px; left: 2px;
-  width: 14px; height: 14px;
-  border-radius: 50%;
-  background: var(--text-dim);
-  transition: transform 0.2s, background 0.2s;
-}
-.sem-include-pill.on .sem-include-thumb {
-  transform: translateX(16px);
-  background: var(--accent);
-}
-.sem-include-pill.off .sem-include-thumb {
-  background: var(--danger);
-}
-.semester-card.excluded { border-color: rgba(242,87,87,0.35); }
-
-.include-all-btn {
-  display: inline-flex; align-items: center; gap: 0.45rem;
-  background: none; border: 1px solid var(--accent);
-  color: var(--text-muted); font-family: var(--font); font-size: 0.8rem;
-  letter-spacing: 0.06em; text-transform: uppercase;
-  padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;
-  transition: color 0.2s, background 0.2s;
-}
-.include-all-btn:hover { color: var(--accent); background: var(--accent-soft); }
-
 /* ── Empty state ── */
 .empty-state { padding: 2.5rem 1rem; text-align: center; color: var(--text-dim); font-size: 0.88rem; }
 
@@ -443,13 +370,6 @@ body {
       <div class="stat"><div class="stat-label">Semesters</div><div class="stat-value" id="stat-sems">0</div></div>
       <div class="stat"><div class="stat-label">Courses</div><div class="stat-value" id="stat-courses">0</div></div>
     </div>
-    <div class="dp-toggle-wrap">
-      <span class="dp-toggle-label">Precision</span>
-      <div class="dp-pill">
-        <button id="dp3-btn" class="active">3dp</button>
-        <button id="dp2-btn">2dp</button>
-      </div>
-    </div>
   </div>
 
   <div class="graph-section">
@@ -475,12 +395,6 @@ body {
     </div>
   </div>
 
-  <div class="semesters-toolbar" id="semesters-toolbar" style="display:none; margin-bottom:0.75rem;">
-    <button class="include-all-btn" id="include-all-btn">
-      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6.5" cy="6.5" r="5.5"/><polyline points="3.5,6.5 5.5,8.5 9.5,4.5"/></svg>
-      Include All Semesters
-    </button>
-  </div>
   <div class="semesters" id="semesters-container">
     <div class="empty-state">No semesters yet. Add your first one below.</div>
   </div>
@@ -533,17 +447,14 @@ body {
   var semGpaVisible = false;
   var chartInstance = null;
   var semChartInstance = null;
-  var dp = 3; // decimal places: 2 or 3
 
   function uid() { return Math.random().toString(36).slice(2, 9); }
-  function fmt(v) { return (v !== null && v !== undefined) ? v.toFixed(dp) : '—'; }
+  function fmt(v) { return (v !== null && v !== undefined) ? v.toFixed(3) : '—'; }
   function gpaToGrade(gpa) { return GRADE_MAP[parseFloat(gpa).toFixed(1)] || '—'; }
 
   function load() {
     try { var s = localStorage.getItem(STORAGE_KEY); if (s) state = JSON.parse(s); } catch(e) {}
     if (!state.collapsed) state.collapsed = {};
-    if (!state.excluded) state.excluded = {};
-    if (state.dp) dp = state.dp;
   }
   function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
@@ -552,43 +463,6 @@ body {
     save();
     var card = document.getElementById('card-'+semId);
     if (card) card.classList.toggle('collapsed', !!state.collapsed[semId]);
-  }
-
-  function toggleInclude(semId, included) {
-    state.excluded[semId] = !included;
-    save();
-    var card = document.getElementById('card-'+semId);
-    if (card) {
-      card.classList.toggle('excluded', !included);
-      var body = card.querySelector('.sem-body');
-      if (body) { body.style.opacity = !included ? '0.4' : ''; body.style.pointerEvents = !included ? 'none' : ''; }
-    }
-    var lbl = document.getElementById('excl-label-'+semId);
-    if (lbl) lbl.style.display = !included ? 'inline-block' : 'none';
-    var pill = document.getElementById('incl-pill-'+semId);
-    if (pill) {
-      pill.className = 'sem-include-pill ' + (included ? 'on' : 'off');
-      pill.title = included ? 'Click to exclude from CGPA' : 'Click to include in CGPA';
-    }
-    var hasExcluded = state.semesters.some(function(s){ return state.excluded[s.id]; });
-    document.getElementById('semesters-toolbar').style.display = hasExcluded ? 'block' : 'none';
-    var idx = state.semesters.findIndex(function(s){ return s.id === semId; });
-    refreshFooters(idx);
-    updateStats();
-    if (cgpaTrendVisible) renderCGPAChart();
-    if (semGpaVisible) renderSemChart();
-  }
-
-  function setDp(val) {
-    dp = val;
-    state.dp = val;
-    save();
-    document.getElementById('dp3-btn').classList.toggle('active', dp === 3);
-    document.getElementById('dp2-btn').classList.toggle('active', dp === 2);
-    updateStats();
-    refreshFooters(0);
-    if (cgpaTrendVisible) renderCGPAChart();
-    if (semGpaVisible) renderSemChart();
   }
 
   /* ── Calculations ── */
@@ -603,7 +477,6 @@ body {
   function calcCGPAAfter(index) {
     var wSum = 0, cSum = 0;
     for (var i = 0; i <= index; i++) {
-      if (state.excluded[state.semesters[i].id]) continue;
       state.semesters[i].courses.forEach(function(c) {
         var cr = parseFloat(c.credits) || 0;
         if (cr > 0) { wSum += c.gpa * cr; cSum += cr; }
@@ -613,15 +486,8 @@ body {
   }
 
   function calcOverall() {
-    var wSum = 0, cSum = 0;
-    state.semesters.forEach(function(sem) {
-      if (state.excluded[sem.id]) return;
-      sem.courses.forEach(function(c) {
-        var cr = parseFloat(c.credits) || 0;
-        if (cr > 0) { wSum += c.gpa * cr; cSum += cr; }
-      });
-    });
-    return cSum > 0 ? wSum / cSum : null;
+    if (!state.semesters.length) return null;
+    return calcCGPAAfter(state.semesters.length - 1);
   }
 
   /* ── Modal — key fix: store pending callback in a closure var, never re-clone ── */
@@ -664,9 +530,8 @@ body {
   function renderCGPAChart() {
     var labels = [], data = [];
     state.semesters.forEach(function(sem, i) {
-      if (state.excluded[sem.id]) return;
       var val = calcCGPAAfter(i);
-      if (val !== null) { labels.push(sem.name || 'Sem '+(i+1)); data.push(parseFloat(val.toFixed(dp))); }
+      if (val !== null) { labels.push(sem.name || 'Sem '+(i+1)); data.push(parseFloat(val.toFixed(3))); }
     });
     if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
     if (!labels.length) return;
@@ -686,7 +551,7 @@ body {
           tooltip: {
             backgroundColor: '#222228', borderColor: 'rgba(124,106,247,0.4)', borderWidth: 1,
             titleColor: '#888', bodyColor: '#f0f0f2',
-            callbacks: { label: function(c){ return ' CGPA: '+c.parsed.y.toFixed(dp); } }
+            callbacks: { label: function(c){ return ' CGPA: '+c.parsed.y.toFixed(3); } }
           }
         },
         scales: {
@@ -702,9 +567,8 @@ body {
   function renderSemChart() {
     var labels = [], data = [];
     state.semesters.forEach(function(sem, i) {
-      if (state.excluded[sem.id]) return;
       var val = calcSemGPA(sem);
-      if (val !== null) { labels.push(sem.name || 'Sem '+(i+1)); data.push(parseFloat(val.toFixed(dp))); }
+      if (val !== null) { labels.push(sem.name || 'Sem '+(i+1)); data.push(parseFloat(val.toFixed(3))); }
     });
     if (semChartInstance) { semChartInstance.destroy(); semChartInstance = null; }
     if (!labels.length) return;
@@ -734,7 +598,7 @@ body {
           tooltip: {
             backgroundColor: '#222228', borderColor: 'rgba(124,106,247,0.4)', borderWidth: 1,
             titleColor: '#888', bodyColor: '#f0f0f2',
-            callbacks: { label: function(c){ return ' GPA: '+c.parsed.y.toFixed(dp); } }
+            callbacks: { label: function(c){ return ' GPA: '+c.parsed.y.toFixed(3); } }
           }
         },
         scales: {
@@ -750,26 +614,15 @@ body {
   /* ── Stats ── */
   function updateStats() {
     var cgpa = calcOverall();
-    document.getElementById('stat-cgpa').textContent = cgpa !== null ? cgpa.toFixed(dp) : '—';
+    document.getElementById('stat-cgpa').textContent = cgpa !== null ? cgpa.toFixed(3) : '—';
     var totalCr = state.semesters.reduce(function(s,sem){
-      if (state.excluded[sem.id]) return s;
       return s + sem.courses.reduce(function(ss,c){ return ss+(parseFloat(c.credits)||0); },0);
     },0);
     document.getElementById('stat-credits').textContent = totalCr;
-    document.getElementById('stat-sems').textContent = state.semesters.filter(function(s){ return !state.excluded[s.id]; }).length;
+    document.getElementById('stat-sems').textContent = state.semesters.length;
     document.getElementById('stat-courses').textContent =
       state.semesters.reduce(function(s,sem){ return s+sem.courses.length; },0);
   }
-
-  function includeAll() {
-    state.excluded = {};
-    save();
-    render();
-  }
-
-  document.getElementById('dp3-btn').addEventListener('click', function(){ setDp(3); });
-  document.getElementById('dp2-btn').addEventListener('click', function(){ setDp(2); });
-  document.getElementById('include-all-btn').addEventListener('click', includeAll);
 
   /* ── Actions ── */
   document.getElementById('add-sem-btn').addEventListener('click', function() {
@@ -1005,8 +858,7 @@ body {
     var semCredits = calcSemCredits(sem);
 
     var card = document.createElement('div');
-    var isExcluded = !!(state.excluded && state.excluded[sem.id]);
-    card.className = 'semester-card' + (state.collapsed && state.collapsed[sem.id] ? ' collapsed' : '') + (isExcluded ? ' excluded' : '');
+    card.className = 'semester-card' + (state.collapsed && state.collapsed[sem.id] ? ' collapsed' : '');
     card.id = 'card-'+sem.id;
 
     /* Header */
@@ -1020,22 +872,6 @@ body {
     chevron.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,4 7,10 12,4"/></svg>';
     (function(sid){ chevron.addEventListener('click', function(){ toggleCollapse(sid); }); })(sem.id);
     header.appendChild(chevron);
-
-    /* Include pill — simple sliding toggle */
-    var inclPill = document.createElement('div');
-    inclPill.className = 'sem-include-pill ' + (isExcluded ? 'off' : 'on');
-    inclPill.id = 'incl-pill-'+sem.id;
-    inclPill.title = isExcluded ? 'Click to include in CGPA' : 'Click to exclude from CGPA';
-    var thumb = document.createElement('span');
-    thumb.className = 'sem-include-thumb';
-    inclPill.appendChild(thumb);
-    (function(sid){
-      inclPill.addEventListener('click', function(){
-        var nowExcluded = !!state.excluded[sid];
-        toggleInclude(sid, nowExcluded);
-      });
-    })(sem.id);
-    header.appendChild(inclPill);
 
     var semLeft = document.createElement('div');
     semLeft.className = 'sem-left';
@@ -1070,13 +906,6 @@ body {
     creditsBadge.id = 'credits-badge-'+sem.id;
     creditsBadge.textContent = calcSemCredits(sem)+' credits';
     badgeRow.appendChild(creditsBadge);
-
-    var exclLabel = document.createElement('span');
-    exclLabel.className = 'sem-excluded-label';
-    exclLabel.id = 'excl-label-'+sem.id;
-    exclLabel.textContent = 'not counted';
-    exclLabel.style.display = isExcluded ? 'inline-block' : 'none';
-    badgeRow.appendChild(exclLabel);
 
     var semDelBtn = document.createElement('button');
     semDelBtn.className = 'sem-delete-btn';
@@ -1156,17 +985,12 @@ body {
     } else {
       state.semesters.forEach(function(sem, i){ container.appendChild(buildSemesterCard(sem, i)); });
     }
-    var hasExcluded = state.semesters.some(function(s){ return state.excluded[s.id]; });
-    document.getElementById('semesters-toolbar').style.display = hasExcluded ? 'block' : 'none';
     updateStats();
     if (cgpaTrendVisible) renderCGPAChart();
     if (semGpaVisible) renderSemChart();
   }
 
   load();
-  dp = state.dp || 3;
-  document.getElementById('dp3-btn').classList.toggle('active', dp === 3);
-  document.getElementById('dp2-btn').classList.toggle('active', dp === 2);
   render();
 
   window.addEventListener('orientationchange', function() {

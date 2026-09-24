@@ -53,7 +53,9 @@ A lightweight, privacy-first web application for tracking cumulative GPA across 
 
 | Version | File | Notes |
 |---------|------|-------|
-| v2.0 | `index.html` | Credits badge, semester GPA bar chart, dual graph toggles |
+| v4.0 | `index.html` | Collapsible semesters, precision toggle (3dp/2dp), semester include/exclude switch |
+| v3.0 | `index_v3.html` | Mobile responsive layout, stacked course cards |
+| v2.0 | `index_v2.html` | Credits badge, semester GPA bar chart, dual graph toggles |
 | v1.0 | `index_v1.html` | Initial release |
 
 See [CHANGELOG.md](./CHANGELOG.md) for full details.

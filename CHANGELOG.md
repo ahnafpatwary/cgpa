@@ -9,6 +9,10 @@ All notable changes to this project are documented here.
 ### Added
 - Collapsible semester cards — chevron toggle on each semester header collapses/expands the course list
 - Collapse state persists via localStorage — stays collapsed across page refreshes
+- Precision toggle — switch between 3 decimal places (3dp) and 2 decimal places (2dp)
+- Semester include/exclude toggle — slide switch to omit a semester from cumulative CGPA and statistics
+- Excluded state indicator — red border tint and "not counted" badge on excluded semester cards
+- "Include All Semesters" toolbar button — one-click reset to restore all excluded semesters
 
 ---
 
