@@ -13,6 +13,7 @@ All notable changes to this project are documented here.
 - Semester include/exclude toggle — slide switch to omit a semester from cumulative CGPA and statistics
 - Excluded state indicator — red border tint and "not counted" badge on excluded semester cards
 - "Include All Semesters" toolbar button — one-click reset to restore all excluded semesters
+- Data backup and restore — export full data to a local JSON file and restore with confirmation modal
 
 ---
 

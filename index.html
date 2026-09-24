@@ -376,7 +376,8 @@ body {
   .sem-footer { gap: 0.5rem; flex-direction: column; padding: 0.6rem 1rem; }
 
   /* Site footer stacks */
-  .site-footer { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+  .site-footer { flex-direction: column; align-items: flex-start; gap: 0.85rem; }
+  .footer-actions { width: 100%; justify-content: flex-start; }
   .footer-right { text-align: left; }
 
   /* Graph toggle buttons full width */
@@ -398,6 +399,16 @@ body {
 .footer-left { display: flex; align-items: center; gap: 0.65rem; }
 .footer-icon { width: 28px; height: 28px; flex-shrink: 0; }
 .footer-name { font-size: 0.82rem; font-weight: 500; color: var(--text-muted); }
+.footer-actions { display: flex; align-items: center; gap: 0.5rem; }
+.footer-btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: none; border: 1px solid var(--border);
+  color: var(--text-muted); font-family: var(--font); font-size: 0.78rem;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 0.35rem 0.75rem; border-radius: 6px; cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.footer-btn:hover { border-color: var(--accent); color: var(--accent); }
 .footer-right { font-size: 0.78rem; color: var(--text-dim); text-align: right; }
 
 /* ── Modal ── */
@@ -500,6 +511,17 @@ body {
         <text x="32" y="52" font-family="sans-serif" font-weight="900" font-size="22" fill="#7c6af7" text-anchor="middle">PA</text>
       </svg>
       <span class="footer-name">BRACU CGPA Calculator</span>
+    </div>
+    <div class="footer-actions">
+      <button class="footer-btn" id="export-btn" title="Download backup of your data">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v9m-4-4 4 4 4-4M2 14h12"/></svg>
+        Export
+      </button>
+      <button class="footer-btn" id="import-btn" title="Restore data from backup file">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V2m-4 4 4-4 4 4M2 14h12"/></svg>
+        Import
+      </button>
+      <input type="file" id="import-file-input" accept=".json" style="display:none;" />
     </div>
     <div class="footer-right">
       &copy; <script>document.write(new Date().getFullYear())</script> Ahnaf Tahmid Patwary. All rights reserved.
@@ -767,9 +789,71 @@ body {
     render();
   }
 
+  function exportData() {
+    var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+      version: 4,
+      exportedAt: new Date().toISOString(),
+      semesters: state.semesters || [],
+      collapsed: state.collapsed || {},
+      excluded: state.excluded || {},
+      dp: state.dp || 3
+    }, null, 2));
+    var dlAnchor = document.createElement('a');
+    dlAnchor.setAttribute("href", dataStr);
+    dlAnchor.setAttribute("download", "bracu_cgpa_backup.json");
+    document.body.appendChild(dlAnchor);
+    dlAnchor.click();
+    dlAnchor.remove();
+  }
+
+  function importData(file) {
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var parsed = JSON.parse(e.target.result);
+        if (!parsed || !Array.isArray(parsed.semesters)) {
+          alert('Invalid backup file. It must contain a valid list of semesters.');
+          return;
+        }
+        openModal(
+          'Restore backup?',
+          'This will replace your currently entered semesters and courses with the data from this backup file.',
+          function() {
+            state.semesters = parsed.semesters;
+            state.collapsed = parsed.collapsed || {};
+            state.excluded = parsed.excluded || {};
+            if (parsed.dp) {
+              dp = parsed.dp;
+              state.dp = parsed.dp;
+              document.getElementById('dp3-btn').classList.toggle('active', dp === 3);
+              document.getElementById('dp2-btn').classList.toggle('active', dp === 2);
+            }
+            save();
+            render();
+          }
+        );
+      } catch (err) {
+        alert('Could not read the backup file. Please make sure it is a valid JSON file.');
+      }
+    };
+    reader.readAsText(file);
+  }
+
   document.getElementById('dp3-btn').addEventListener('click', function(){ setDp(3); });
   document.getElementById('dp2-btn').addEventListener('click', function(){ setDp(2); });
   document.getElementById('include-all-btn').addEventListener('click', includeAll);
+  document.getElementById('export-btn').addEventListener('click', exportData);
+  document.getElementById('import-btn').addEventListener('click', function() {
+    var fileInput = document.getElementById('import-file-input');
+    fileInput.value = '';
+    fileInput.click();
+  });
+  document.getElementById('import-file-input').addEventListener('change', function(e) {
+    if (e.target.files && e.target.files[0]) {
+      importData(e.target.files[0]);
+    }
+  });
 
   /* ── Actions ── */
   document.getElementById('add-sem-btn').addEventListener('click', function() {
